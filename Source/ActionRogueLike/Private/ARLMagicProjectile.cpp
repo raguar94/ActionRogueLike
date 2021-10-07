@@ -36,6 +36,5 @@ void AARLMagicProjectile::BeginPlay()
 void AARLMagicProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 

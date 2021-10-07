@@ -18,7 +18,10 @@ AARLExplosiveBarrel::AARLExplosiveBarrel()
 
 	RadialForce = CreateDefaultSubobject<URadialForceComponent>(TEXT("Radial Force"));
 	RadialForce->SetupAttachment(MeshComponent);
+	RadialForce->SetAutoActivate(false);
+	RadialForce->AddCollisionChannelToAffect(ECC_WorldDynamic);
 	RadialForce->ImpulseStrength = 2000.0f;
+	RadialForce->Radius = 750.0f;
 	RadialForce->bImpulseVelChange = true;
 }
 
