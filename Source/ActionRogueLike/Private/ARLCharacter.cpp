@@ -7,6 +7,7 @@
 #include "DrawDebugHelpers.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ARLInteractionComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AARLCharacter::AARLCharacter()
@@ -64,15 +65,31 @@ void AARLCharacter::PrimaryAttack()
 
 void AARLCharacter::PrimaryAttack_TimeElapsed()
 {
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	if (ensure(ProjectileClass))
+	{
+		FHitResult HitResult;
+		const FVector CameraLocation = CameraComp->GetComponentLocation();
+		const FVector EndPoint = CameraLocation + CameraComp->GetForwardVector() * 1500.0f;
+		FCollisionObjectQueryParams ObjectQueryParams;
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 
-	FTransform SpawnTM = FTransform(GetControlRotation(), HandLocation);
+		bool bHitSuccesfull = GetWorld()->LineTraceSingleByObjectType(HitResult, CameraLocation, EndPoint, ObjectQueryParams);
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.Instigator = this;
+		const FVector TargetLocation = bHitSuccesfull ? HitResult.ImpactPoint : EndPoint;
+		
+		const FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
+		const FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(HandLocation, TargetLocation);
+
+		FTransform SpawnTM = FTransform(SpawnRotation, HandLocation);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Instigator = this;
+
+		GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
+	}
 }
 
 
