@@ -22,6 +22,9 @@ protected:
 	TSubclassOf<AActor> ProjectileClass;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<AActor> BlackholeClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	UAnimMontage* AttackAnim;
 
 	FTimerHandle TimerHandle_PrimaryAttack;
@@ -51,8 +54,12 @@ protected:
 	void PrimaryAttack();
 
 	void PrimaryInteract();
-
+	
 	void PrimaryAttack_TimeElapsed();
+	
+	void ShootBlackhole();
+
+	void ShootBlackhole_TimeElapsed();
 
 public:	
 	// Called every frame
@@ -60,5 +67,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+private:
+
+	FTransform GetProjectileSpawnTransform();
 
 };

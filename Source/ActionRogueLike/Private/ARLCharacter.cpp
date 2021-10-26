@@ -67,22 +67,7 @@ void AARLCharacter::PrimaryAttack_TimeElapsed()
 {
 	if (ensure(ProjectileClass))
 	{
-		FHitResult HitResult;
-		const FVector CameraLocation = CameraComp->GetComponentLocation();
-		const FVector EndPoint = CameraLocation + CameraComp->GetForwardVector() * 1500.0f;
-		FCollisionObjectQueryParams ObjectQueryParams;
-		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-		ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-
-		bool bHitSuccesfull = GetWorld()->LineTraceSingleByObjectType(HitResult, CameraLocation, EndPoint, ObjectQueryParams);
-
-		const FVector TargetLocation = bHitSuccesfull ? HitResult.ImpactPoint : EndPoint;
-		
-		const FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-
-		const FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(HandLocation, TargetLocation);
-
-		FTransform SpawnTM = FTransform(SpawnRotation, HandLocation);
+		FTransform SpawnTM = GetProjectileSpawnTransform();
 
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -92,6 +77,27 @@ void AARLCharacter::PrimaryAttack_TimeElapsed()
 	}
 }
 
+
+void AARLCharacter::ShootBlackhole()
+{
+	PlayAnimMontage(AttackAnim);
+
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AARLCharacter::ShootBlackhole_TimeElapsed, 0.2f);
+}
+
+void AARLCharacter::ShootBlackhole_TimeElapsed()
+{
+	if (ensure(BlackholeClass))
+	{
+		FTransform SpawnTM = GetProjectileSpawnTransform();
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Instigator = this;
+
+		GetWorld()->SpawnActor<AActor>(BlackholeClass, SpawnTM, SpawnParams);
+	}
+}
 
 void AARLCharacter::PrimaryInteract()
 {
@@ -134,7 +140,28 @@ void AARLCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
 	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &AARLCharacter::PrimaryAttack);
+	PlayerInputComponent->BindAction("Blackhole", IE_Pressed, this, &AARLCharacter::ShootBlackhole);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &AARLCharacter::PrimaryInteract);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AARLCharacter::Jump);
+}
+
+FTransform AARLCharacter::GetProjectileSpawnTransform()
+{
+	FHitResult HitResult;
+	const FVector CameraLocation = CameraComp->GetComponentLocation();
+	const FVector EndPoint = CameraLocation + CameraComp->GetForwardVector() * 1500.0f;
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+	ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+
+	bool bHitSuccesfull = GetWorld()->LineTraceSingleByObjectType(HitResult, CameraLocation, EndPoint, ObjectQueryParams);
+
+	const FVector TargetLocation = bHitSuccesfull ? HitResult.ImpactPoint : EndPoint;
+
+	const FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+	const FRotator SpawnRotation = UKismetMathLibrary::FindLookAtRotation(HandLocation, TargetLocation);
+
+	return FTransform(SpawnRotation, HandLocation);
 }
 
