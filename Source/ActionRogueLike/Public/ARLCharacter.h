@@ -25,9 +25,16 @@ protected:
 	TSubclassOf<AActor> BlackholeClass;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
+	TSubclassOf<AActor> TeleportClass;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
 	UAnimMontage* AttackAnim;
 
 	FTimerHandle TimerHandle_PrimaryAttack;
+
+	FTimerHandle TimerHandle_Blackhole;
+
+	FTimerHandle TimerHandle_Teleport;
 
 public:
 	// Sets default values for this character's properties
@@ -53,13 +60,17 @@ protected:
 
 	void PrimaryAttack();
 
-	void PrimaryInteract();
-	
 	void PrimaryAttack_TimeElapsed();
+
+	void PrimaryInteract();
 	
 	void ShootBlackhole();
 
 	void ShootBlackhole_TimeElapsed();
+
+	void Teleport();
+
+	void Teleport_TimeElapsed();
 
 public:	
 	// Called every frame

@@ -82,7 +82,7 @@ void AARLCharacter::ShootBlackhole()
 {
 	PlayAnimMontage(AttackAnim);
 
-	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AARLCharacter::ShootBlackhole_TimeElapsed, 0.2f);
+	GetWorldTimerManager().SetTimer(TimerHandle_Blackhole, this, &AARLCharacter::ShootBlackhole_TimeElapsed, 0.2f);
 }
 
 void AARLCharacter::ShootBlackhole_TimeElapsed()
@@ -96,6 +96,27 @@ void AARLCharacter::ShootBlackhole_TimeElapsed()
 		SpawnParams.Instigator = this;
 
 		GetWorld()->SpawnActor<AActor>(BlackholeClass, SpawnTM, SpawnParams);
+	}
+}
+
+void AARLCharacter::Teleport()
+{
+	PlayAnimMontage(AttackAnim);
+
+	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &AARLCharacter::Teleport_TimeElapsed, 0.2f);
+}
+
+void AARLCharacter::Teleport_TimeElapsed()
+{
+	if (TeleportClass)
+	{
+		FTransform SpawnTM = GetProjectileSpawnTransform();
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Instigator = this;
+
+		GetWorld()->SpawnActor<AActor>(TeleportClass, SpawnTM, SpawnParams);
 	}
 }
 
@@ -141,6 +162,7 @@ void AARLCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &AARLCharacter::PrimaryAttack);
 	PlayerInputComponent->BindAction("Blackhole", IE_Pressed, this, &AARLCharacter::ShootBlackhole);
+	PlayerInputComponent->BindAction("Teleport", IE_Pressed, this, &AARLCharacter::Teleport);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &AARLCharacter::PrimaryInteract);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AARLCharacter::Jump);
 }

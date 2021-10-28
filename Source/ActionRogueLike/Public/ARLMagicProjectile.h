@@ -19,6 +19,12 @@ public:
 	// Sets default values for this actor's properties
 	AARLMagicProjectile();
 
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE USphereComponent* GetSphereComponent() const { return SphereComp; }
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE UProjectileMovementComponent* GetMovementComponent() const { return MovementComp; }
+
 protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
