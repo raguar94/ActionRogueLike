@@ -10,6 +10,8 @@ class UCameraComponent;
 class USpringArmComponent;
 class UARLInteractionComponent;
 class UAnimMontage;
+class UARLAttributeComponent;
+class UParticleSystem;
 
 UCLASS()
 class ACTIONROGUELIKE_API AARLCharacter : public ACharacter
@@ -17,6 +19,12 @@ class ACTIONROGUELIKE_API AARLCharacter : public ACharacter
 	GENERATED_BODY()
 
 protected:
+
+	UPROPERTY(VisibleAnywhere, Category = "Effects")
+	FName TimeToHistParamName;
+
+	UPROPERTY(VisibleAnywhere, Category = "Effects")
+	FName HandSocketName;
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	TSubclassOf<AActor> ProjectileClass;
@@ -29,6 +37,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	UAnimMontage* AttackAnim;
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	UParticleSystem* CastingEffect;
 
 	FTimerHandle TimerHandle_PrimaryAttack;
 
@@ -50,6 +61,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UARLInteractionComponent* InteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UARLAttributeComponent* AttributeComp;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -71,6 +85,15 @@ protected:
 	void Teleport();
 
 	void Teleport_TimeElapsed();
+
+	void StartAttackEffects();
+
+	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
+
+	UFUNCTION()
+	void OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta);
+
+	virtual void PostInitializeComponents();
 
 public:	
 	// Called every frame

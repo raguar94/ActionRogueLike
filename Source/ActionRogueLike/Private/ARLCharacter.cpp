@@ -8,6 +8,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ARLInteractionComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "ARLAttributeComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AARLCharacter::AARLCharacter()
@@ -24,9 +26,14 @@ AARLCharacter::AARLCharacter()
 
 	InteractionComponent = CreateDefaultSubobject<UARLInteractionComponent>("Interaction Component");
 
+	AttributeComp = CreateDefaultSubobject<UARLAttributeComponent>("Attribute Component");
+
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	bUseControllerRotationYaw = false;
+
+	TimeToHistParamName = "TimeToHit";
+	HandSocketName = "Muzzle_01";
 }
 
 // Called when the game starts or when spawned
@@ -58,66 +65,101 @@ void AARLCharacter::MoveRight(float Value)
 
 void AARLCharacter::PrimaryAttack()
 {
-	PlayAnimMontage(AttackAnim);
+	StartAttackEffects();
 
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AARLCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 }
 
 void AARLCharacter::PrimaryAttack_TimeElapsed()
 {
-	if (ensure(ProjectileClass))
-	{
-		FTransform SpawnTM = GetProjectileSpawnTransform();
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnParams.Instigator = this;
-
-		GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
-	}
+	SpawnProjectile(ProjectileClass);
 }
 
 
 void AARLCharacter::ShootBlackhole()
 {
-	PlayAnimMontage(AttackAnim);
+	StartAttackEffects();
 
 	GetWorldTimerManager().SetTimer(TimerHandle_Blackhole, this, &AARLCharacter::ShootBlackhole_TimeElapsed, 0.2f);
 }
 
 void AARLCharacter::ShootBlackhole_TimeElapsed()
 {
-	if (ensure(BlackholeClass))
-	{
-		FTransform SpawnTM = GetProjectileSpawnTransform();
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnParams.Instigator = this;
-
-		GetWorld()->SpawnActor<AActor>(BlackholeClass, SpawnTM, SpawnParams);
-	}
+	SpawnProjectile(BlackholeClass);
 }
 
 void AARLCharacter::Teleport()
 {
-	PlayAnimMontage(AttackAnim);
+	StartAttackEffects();
 
 	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &AARLCharacter::Teleport_TimeElapsed, 0.2f);
 }
 
 void AARLCharacter::Teleport_TimeElapsed()
 {
-	if (TeleportClass)
+	SpawnProjectile(TeleportClass);
+}
+
+void AARLCharacter::StartAttackEffects()
+{
+	PlayAnimMontage(AttackAnim);
+
+	UGameplayStatics::SpawnEmitterAttached(CastingEffect, GetMesh(), HandSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
+}
+
+void AARLCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
+{
+	if (ensureAlways(ClassToSpawn))
 	{
-		FTransform SpawnTM = GetProjectileSpawnTransform();
+		FVector HandLocation = GetMesh()->GetSocketLocation(HandSocketName);
 
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		SpawnParams.Instigator = this;
 
-		GetWorld()->SpawnActor<AActor>(TeleportClass, SpawnTM, SpawnParams);
+		FCollisionShape Shape;
+		Shape.SetSphere(20.0f);
+
+		// Ignore Player
+		FCollisionQueryParams Params;
+		Params.AddIgnoredActor(this);
+
+		FCollisionObjectQueryParams ObjParams;
+		ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+		ObjParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		ObjParams.AddObjectTypesToQuery(ECC_Pawn);
+
+		FVector TraceStart = CameraComp->GetComponentLocation();
+		// endpoint far into the look-at distance (not too far, still adjust somewhat towards crosshair on a miss)
+		FVector TraceEnd = CameraComp->GetComponentLocation() + (GetControlRotation().Vector() * 5000);
+		FHitResult Hit;
+		// returns true if we got to a blocking hit
+		if (GetWorld()->SweepSingleByObjectType(Hit, TraceStart, TraceEnd, FQuat::Identity, ObjParams, Shape, Params))
+		{
+			// Overwrite trace end with impact point in world
+			TraceEnd = Hit.ImpactPoint;
+		}
+		// find new direction/rotation from Hand pointing to impact point in world.
+		FRotator ProjRotation = FRotationMatrix::MakeFromX(TraceEnd - HandLocation).Rotator();
+		FTransform SpawnTM = FTransform(ProjRotation, HandLocation);
+		GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnTM, SpawnParams);
 	}
+}
+
+void AARLCharacter::OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta)
+{
+	if (NewHealth<= 0.0f && Delta < 0.0f)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		DisableInput(PC);
+	}
+}
+
+void AARLCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AttributeComp->OnHealthChanged.AddDynamic(this, &AARLCharacter::OnHealthChanged);
 }
 
 void AARLCharacter::PrimaryInteract()
