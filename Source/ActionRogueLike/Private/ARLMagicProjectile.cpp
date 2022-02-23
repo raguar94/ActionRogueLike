@@ -6,6 +6,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "ARLAttributeComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "ARLGameplayFunctionLibrary.h"
 
 // Sets default values
 AARLMagicProjectile::AARLMagicProjectile()
@@ -25,17 +27,27 @@ AARLMagicProjectile::AARLMagicProjectile()
 	MovementComp->InitialSpeed = 1000.0f;
 	MovementComp->bRotationFollowsVelocity = true;
 	MovementComp->bInitialVelocityInLocalSpace = true;
+
+	DamageAmount = 20.0f;
 }
 
 void AARLMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	if (OtherActor)
+	if (OtherActor && OtherActor != GetInstigator())
 	{
-		UARLAttributeComponent* AttributeComp = Cast<UARLAttributeComponent>(OtherActor->GetComponentByClass(UARLAttributeComponent::StaticClass()));
-		if (AttributeComp)
-		{
-			AttributeComp->ApplyHealthChange(-20.0f);
+// 		UARLAttributeComponent* AttributeComp = Cast<UARLAttributeComponent>(OtherActor->GetComponentByClass(UARLAttributeComponent::StaticClass()));
+// 		if (AttributeComp)
+// 		{
+// 			AttributeComp->ApplyHealthChange(GetInstigator(), -1.0f * DamageAmount);
+// 			if (ExplosionParticle)
+// 			{
+// 				UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionParticle, GetActorLocation(), GetActorRotation(), true);
+// 			}
+// 			Destroy();
+// 		}
 
+		if (UARLGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DamageAmount, SweepResult))
+		{
 			Destroy();
 		}
 	}

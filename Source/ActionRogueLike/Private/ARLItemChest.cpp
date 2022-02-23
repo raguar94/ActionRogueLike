@@ -23,17 +23,3 @@ AARLItemChest::AARLItemChest()
 	TargetPitch = 110.0f;
 }
 
-// Called when the game starts or when spawned
-void AARLItemChest::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void AARLItemChest::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-

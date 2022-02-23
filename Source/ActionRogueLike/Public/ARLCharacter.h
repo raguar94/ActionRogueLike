@@ -21,7 +21,7 @@ class ACTIONROGUELIKE_API AARLCharacter : public ACharacter
 protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Effects")
-	FName TimeToHistParamName;
+	FName TimeToHitParamName;
 
 	UPROPERTY(VisibleAnywhere, Category = "Effects")
 	FName HandSocketName;
@@ -93,7 +93,9 @@ protected:
 	UFUNCTION()
 	void OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta);
 
-	virtual void PostInitializeComponents();
+	virtual void PostInitializeComponents() override;
+
+	virtual FVector GetPawnViewLocation() const override;
 
 public:	
 	// Called every frame
@@ -101,6 +103,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION(Exec)
+	void HealSelf(float Amount = 100);
 
 private:
 

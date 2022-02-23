@@ -22,6 +22,9 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* MeshComponent;
 
+	UPROPERTY(EditDefaultsOnly)
+	int32 CreditCost;
+
 public:
 
 	AARLPowerUp_HealthPotion();

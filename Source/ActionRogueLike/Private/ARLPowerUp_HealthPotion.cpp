@@ -3,6 +3,7 @@
 
 #include "ARLPowerUp_HealthPotion.h"
 #include "ARLAttributeComponent.h"
+#include "ARLPlayerState.h"
 
 AARLPowerUp_HealthPotion::AARLPowerUp_HealthPotion()
 {
@@ -10,6 +11,9 @@ AARLPowerUp_HealthPotion::AARLPowerUp_HealthPotion()
 	// Disable collision, instead we use sphereCopm to handle interaction queries
 	MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MeshComponent->SetupAttachment(RootComponent);
+
+	CreditCost = 50;
+
 }
 
 void AARLPowerUp_HealthPotion::Interact_Implementation(APawn* InstigatorPawn)
@@ -23,10 +27,13 @@ void AARLPowerUp_HealthPotion::Interact_Implementation(APawn* InstigatorPawn)
 	// check if not already at max health
 	if (ensure(AttributeComp) && !AttributeComp->IsFullHealth())
 	{
-		// Only activate if healed successfully
-		if (AttributeComp->ApplyHealthChange(AttributeComp->GetHealthMax()))
+		if (AARLPlayerState* PS = InstigatorPawn->GetPlayerState<AARLPlayerState>())
 		{
-			HideAndCooldownPowerUp();
+			// Only activate if healed successfully
+			if (PS->RemoveCredits(CreditCost) && AttributeComp->ApplyHealthChange(this, AttributeComp->GetHealthMax()))
+			{
+				HideAndCooldownPowerUp();
+			}
 		}
 	}
 }

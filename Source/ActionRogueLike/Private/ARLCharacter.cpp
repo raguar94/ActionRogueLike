@@ -32,8 +32,21 @@ AARLCharacter::AARLCharacter()
 
 	bUseControllerRotationYaw = false;
 
-	TimeToHistParamName = "TimeToHit";
+	TimeToHitParamName = "TimeToHit";
 	HandSocketName = "Muzzle_01";
+}
+
+
+void AARLCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AttributeComp->OnHealthChanged.AddDynamic(this, &AARLCharacter::OnHealthChanged);
+}
+
+FVector AARLCharacter::GetPawnViewLocation() const
+{
+	return CameraComp->GetComponentLocation();
 }
 
 // Called when the game starts or when spawned
@@ -148,18 +161,16 @@ void AARLCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
 
 void AARLCharacter::OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta)
 {
-	if (NewHealth<= 0.0f && Delta < 0.0f)
+	if (Delta < 0.0f)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
+	}
+	
+	if (NewHealth <= 0.0f && Delta < 0.0f)
 	{
 		APlayerController* PC = Cast<APlayerController>(GetController());
 		DisableInput(PC);
 	}
-}
-
-void AARLCharacter::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
-
-	AttributeComp->OnHealthChanged.AddDynamic(this, &AARLCharacter::OnHealthChanged);
 }
 
 void AARLCharacter::PrimaryInteract()
@@ -207,6 +218,11 @@ void AARLCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction("Teleport", IE_Pressed, this, &AARLCharacter::Teleport);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &AARLCharacter::PrimaryInteract);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AARLCharacter::Jump);
+}
+
+void AARLCharacter::HealSelf(float Amount /* = 100 */)
+{
+	AttributeComp->ApplyHealthChange(this, Amount);
 }
 
 FTransform AARLCharacter::GetProjectileSpawnTransform()

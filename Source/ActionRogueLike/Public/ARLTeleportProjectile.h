@@ -20,9 +20,6 @@ public:
 	virtual void BeginPlay() override;
 
 protected:
-
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* ExplosionParticle;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float TimeBeforeExplode;
