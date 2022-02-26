@@ -19,7 +19,7 @@ void UARLBTService_CheckHealth::TickNode(UBehaviorTreeComponent& OwnerComp, uint
 			APawn* AIPawn = MyController->GetPawn();
 			if (ensure(AIPawn))
 			{
-				UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAtributes(AIPawn);
+				UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAttributes(AIPawn);
 					
 				if (ensure(AttributeComp))
 				{

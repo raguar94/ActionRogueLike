@@ -12,6 +12,7 @@ class UARLInteractionComponent;
 class UAnimMontage;
 class UARLAttributeComponent;
 class UParticleSystem;
+class UARLActionComponent;
 
 UCLASS()
 class ACTIONROGUELIKE_API AARLCharacter : public ACharacter
@@ -22,30 +23,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category = "Effects")
 	FName TimeToHitParamName;
-
-	UPROPERTY(VisibleAnywhere, Category = "Effects")
-	FName HandSocketName;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<AActor> ProjectileClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<AActor> BlackholeClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	TSubclassOf<AActor> TeleportClass;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	UAnimMontage* AttackAnim;
-
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	UParticleSystem* CastingEffect;
-
-	FTimerHandle TimerHandle_PrimaryAttack;
-
-	FTimerHandle TimerHandle_Blackhole;
-
-	FTimerHandle TimerHandle_Teleport;
 
 public:
 	// Sets default values for this character's properties
@@ -64,6 +41,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UARLAttributeComponent* AttributeComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UARLActionComponent* ActionComp;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -72,23 +52,17 @@ protected:
 
 	void MoveRight(float Value);
 
-	void PrimaryAttack();
+	void SprintStart();
 
-	void PrimaryAttack_TimeElapsed();
+	void SprintStop();
+
+	void PrimaryAttack();
 
 	void PrimaryInteract();
 	
 	void ShootBlackhole();
 
-	void ShootBlackhole_TimeElapsed();
-
 	void Teleport();
-
-	void Teleport_TimeElapsed();
-
-	void StartAttackEffects();
-
-	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
 
 	UFUNCTION()
 	void OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta);

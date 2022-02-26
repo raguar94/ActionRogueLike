@@ -11,9 +11,11 @@ UARLAttributeComponent::UARLAttributeComponent()
 {
 	HealthMax = 100.0f;
 	Health = HealthMax;
+	Rage = 0;
+	RageMax = 100;
 }
 
-UARLAttributeComponent* UARLAttributeComponent::GetAtributes(AActor* FromActor)
+UARLAttributeComponent* UARLAttributeComponent::GetAttributes(AActor* FromActor)
 {
 	if (FromActor)
 	{
@@ -25,7 +27,7 @@ UARLAttributeComponent* UARLAttributeComponent::GetAtributes(AActor* FromActor)
 
 bool UARLAttributeComponent::IsActorAlive(AActor* FromActor)
 {
-	UARLAttributeComponent* AttrbuteComp = GetAtributes(FromActor);
+	UARLAttributeComponent* AttrbuteComp = GetAttributes(FromActor);
 	if (AttrbuteComp)
 	{
 		return AttrbuteComp->IsAlive();
@@ -44,16 +46,16 @@ bool UARLAttributeComponent::ApplyHealthChange(AActor* InstigatorActor, float De
 
 	if (Delta < 0.0f)
 	{
-		float DamageMultiplier = CVarDamageMultiplier.GetValueOnGameThread();
+		const float DamageMultiplier = CVarDamageMultiplier.GetValueOnGameThread();
 
 		Delta *= DamageMultiplier;
 	}
 	
-	float OldHealth = Health;
+	const float OldHealth = Health;
 	
 	Health = FMath::Clamp(Health + Delta, 0.0f, HealthMax);
 
-	float ActualDelta = Health - OldHealth;
+	const float ActualDelta = Health - OldHealth;
 	OnHealthChanged.Broadcast(InstigatorActor, this, Health, ActualDelta);
 
 	// Died
@@ -87,6 +89,26 @@ float UARLAttributeComponent::GetHealthMax() const
 float UARLAttributeComponent::GetCurrentHealth() const
 {
 	return Health;
+}
+
+float UARLAttributeComponent::GetRage() const
+{
+	return Rage;
+}
+
+bool UARLAttributeComponent::ApplyRage(AActor* InstigatorActor, float Delta)
+{
+	const float OldRage = Rage;
+
+	Rage = FMath::Clamp(Rage + Delta, 0.0f, RageMax);
+
+	const float ActualDelta = Rage - OldRage;
+	if (ActualDelta != 0.0f)
+	{
+		OnRageChanged.Broadcast(InstigatorActor, this, Rage, ActualDelta);
+	}
+
+	return ActualDelta != 0;
 }
 
 bool UARLAttributeComponent::Kill(AActor* InstigatorACtor)

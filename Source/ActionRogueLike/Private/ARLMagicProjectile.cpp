@@ -5,9 +5,10 @@
 #include "Components/SphereComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "ARLAttributeComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "ARLGameplayFunctionLibrary.h"
+#include "ActionComponent/ARLActionComponent.h"
+#include "ActionComponent/ARLActionEffect.h"
 
 // Sets default values
 AARLMagicProjectile::AARLMagicProjectile()
@@ -35,19 +36,21 @@ void AARLMagicProjectile::OnActorOverlap(UPrimitiveComponent* OverlappedComponen
 {
 	if (OtherActor && OtherActor != GetInstigator())
 	{
-// 		UARLAttributeComponent* AttributeComp = Cast<UARLAttributeComponent>(OtherActor->GetComponentByClass(UARLAttributeComponent::StaticClass()));
-// 		if (AttributeComp)
-// 		{
-// 			AttributeComp->ApplyHealthChange(GetInstigator(), -1.0f * DamageAmount);
-// 			if (ExplosionParticle)
-// 			{
-// 				UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionParticle, GetActorLocation(), GetActorRotation(), true);
-// 			}
-// 			Destroy();
-// 		}
-
+		UARLActionComponent* ActionComp = Cast<UARLActionComponent>(OtherActor->GetComponentByClass(UARLActionComponent::StaticClass()));
+		if (ActionComp && ActionComp->ActiveGameplayTags.HasTag(ParryTag))
+		{
+			MovementComp->Velocity = -MovementComp->Velocity;
+			SetInstigator(Cast<APawn>(OtherActor));
+			return;
+		}
+		
 		if (UARLGameplayFunctionLibrary::ApplyDirectionalDamage(GetInstigator(), OtherActor, DamageAmount, SweepResult))
 		{
+			if (ActionComp)
+			{
+				ActionComp->AddAction(GetInstigator(), BurningActionClass);
+			}
+			
 			Destroy();
 		}
 	}

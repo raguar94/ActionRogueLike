@@ -10,6 +10,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "ARLAttributeComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "ActionComponent/ARLActionComponent.h"
 
 // Sets default values
 AARLCharacter::AARLCharacter()
@@ -28,12 +29,13 @@ AARLCharacter::AARLCharacter()
 
 	AttributeComp = CreateDefaultSubobject<UARLAttributeComponent>("Attribute Component");
 
+	ActionComp = CreateDefaultSubobject<UARLActionComponent>("ActionComp");
+
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	bUseControllerRotationYaw = false;
 
 	TimeToHitParamName = "TimeToHit";
-	HandSocketName = "Muzzle_01";
 }
 
 
@@ -56,130 +58,6 @@ void AARLCharacter::BeginPlay()
 	 
 }
 
-void AARLCharacter::MoveForward(float Value)
-{
-	FRotator ControlRot = GetControlRotation();
-	ControlRot.Pitch = 0.0f;
-	ControlRot.Roll = 0.0f;
-	
-	AddMovementInput(ControlRot.Vector(), Value);
-}
-
-void AARLCharacter::MoveRight(float Value)
-{
-	FRotator ControlRot = GetControlRotation();
-	ControlRot.Pitch = 0.0f;
-	ControlRot.Roll = 0.0f;
-
-	FVector RightVector = FRotationMatrix(ControlRot).GetScaledAxis(EAxis::Y);
-
-	AddMovementInput(RightVector, Value);
-}
-
-void AARLCharacter::PrimaryAttack()
-{
-	StartAttackEffects();
-
-	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &AARLCharacter::PrimaryAttack_TimeElapsed, 0.2f);
-}
-
-void AARLCharacter::PrimaryAttack_TimeElapsed()
-{
-	SpawnProjectile(ProjectileClass);
-}
-
-
-void AARLCharacter::ShootBlackhole()
-{
-	StartAttackEffects();
-
-	GetWorldTimerManager().SetTimer(TimerHandle_Blackhole, this, &AARLCharacter::ShootBlackhole_TimeElapsed, 0.2f);
-}
-
-void AARLCharacter::ShootBlackhole_TimeElapsed()
-{
-	SpawnProjectile(BlackholeClass);
-}
-
-void AARLCharacter::Teleport()
-{
-	StartAttackEffects();
-
-	GetWorldTimerManager().SetTimer(TimerHandle_Teleport, this, &AARLCharacter::Teleport_TimeElapsed, 0.2f);
-}
-
-void AARLCharacter::Teleport_TimeElapsed()
-{
-	SpawnProjectile(TeleportClass);
-}
-
-void AARLCharacter::StartAttackEffects()
-{
-	PlayAnimMontage(AttackAnim);
-
-	UGameplayStatics::SpawnEmitterAttached(CastingEffect, GetMesh(), HandSocketName, FVector::ZeroVector, FRotator::ZeroRotator, EAttachLocation::SnapToTarget);
-}
-
-void AARLCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
-{
-	if (ensureAlways(ClassToSpawn))
-	{
-		FVector HandLocation = GetMesh()->GetSocketLocation(HandSocketName);
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnParams.Instigator = this;
-
-		FCollisionShape Shape;
-		Shape.SetSphere(20.0f);
-
-		// Ignore Player
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(this);
-
-		FCollisionObjectQueryParams ObjParams;
-		ObjParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-		ObjParams.AddObjectTypesToQuery(ECC_WorldStatic);
-		ObjParams.AddObjectTypesToQuery(ECC_Pawn);
-
-		FVector TraceStart = CameraComp->GetComponentLocation();
-		// endpoint far into the look-at distance (not too far, still adjust somewhat towards crosshair on a miss)
-		FVector TraceEnd = CameraComp->GetComponentLocation() + (GetControlRotation().Vector() * 5000);
-		FHitResult Hit;
-		// returns true if we got to a blocking hit
-		if (GetWorld()->SweepSingleByObjectType(Hit, TraceStart, TraceEnd, FQuat::Identity, ObjParams, Shape, Params))
-		{
-			// Overwrite trace end with impact point in world
-			TraceEnd = Hit.ImpactPoint;
-		}
-		// find new direction/rotation from Hand pointing to impact point in world.
-		FRotator ProjRotation = FRotationMatrix::MakeFromX(TraceEnd - HandLocation).Rotator();
-		FTransform SpawnTM = FTransform(ProjRotation, HandLocation);
-		GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnTM, SpawnParams);
-	}
-}
-
-void AARLCharacter::OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta)
-{
-	if (Delta < 0.0f)
-	{
-		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
-	}
-	
-	if (NewHealth <= 0.0f && Delta < 0.0f)
-	{
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		DisableInput(PC);
-	}
-}
-
-void AARLCharacter::PrimaryInteract()
-{
-	if (InteractionComponent)
-	{
-		InteractionComponent->PrimaryInteract();
-	}
-}
 // Called every frame
 void AARLCharacter::Tick(float DeltaTime)
 {
@@ -218,6 +96,83 @@ void AARLCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction("Teleport", IE_Pressed, this, &AARLCharacter::Teleport);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &AARLCharacter::PrimaryInteract);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AARLCharacter::Jump);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AARLCharacter::SprintStart);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AARLCharacter::SprintStop);
+}
+
+
+void AARLCharacter::MoveForward(float Value)
+{
+	FRotator ControlRot = GetControlRotation();
+	ControlRot.Pitch = 0.0f;
+	ControlRot.Roll = 0.0f;
+	
+	AddMovementInput(ControlRot.Vector(), Value);
+}
+
+void AARLCharacter::MoveRight(float Value)
+{
+	FRotator ControlRot = GetControlRotation();
+	ControlRot.Pitch = 0.0f;
+	ControlRot.Roll = 0.0f;
+
+	FVector RightVector = FRotationMatrix(ControlRot).GetScaledAxis(EAxis::Y);
+
+	AddMovementInput(RightVector, Value);
+}
+
+void AARLCharacter::SprintStart()
+{
+	ActionComp->StartActionByName(this, "Sprint");
+}
+
+void AARLCharacter::SprintStop()
+{
+	ActionComp->StopActionByName(this, "Sprint");
+}
+
+void AARLCharacter::PrimaryAttack()
+{
+	ActionComp->StartActionByName(this, "PrimaryAttack");
+}
+
+
+void AARLCharacter::ShootBlackhole()
+{
+	ActionComp->StartActionByName(this, "Blackhole");
+}
+
+void AARLCharacter::Teleport()
+{
+	ActionComp->StartActionByName(this, "Dash");
+}
+
+void AARLCharacter::OnHealthChanged(AActor* InstigatorActor, UARLAttributeComponent* OwningComp, float NewHealth, float Delta)
+{
+	if (Delta < 0.0f)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials(TimeToHitParamName, GetWorld()->TimeSeconds);
+
+		// Rage added equal to damage received (Abs to turn into positive rage number)
+		const float RageDelta = FMath::Abs(Delta);
+		AttributeComp->ApplyRage(InstigatorActor, RageDelta);
+	}
+
+	// Died
+	if (NewHealth <= 0.0f && Delta < 0.0f)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		DisableInput(PC);
+	}
+}
+
+void AARLCharacter::PrimaryInteract()
+{
+	if (InteractionComponent)
+	{
+		InteractionComponent->PrimaryInteract();
+	}
 }
 
 void AARLCharacter::HealSelf(float Amount /* = 100 */)

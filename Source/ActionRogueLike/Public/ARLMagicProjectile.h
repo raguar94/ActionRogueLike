@@ -3,12 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/Actor.h"
 #include "ARLMagicProjectile.generated.h"
 
 class UProjectileMovementComponent;
 class USphereComponent;
 class UParticleSystemComponent;
+class UARLActionEffect;
 
 UCLASS()
 class ACTIONROGUELIKE_API AARLMagicProjectile : public AActor
@@ -44,6 +46,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	float DamageAmount;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	FGameplayTag ParryTag;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
+	TSubclassOf<UARLActionEffect> BurningActionClass;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -23,7 +23,7 @@ EBTNodeResult::Type UARLBTTask_Heal::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 			return EBTNodeResult::Failed;
 		}
 
-		UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAtributes(MyPawn);
+		UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAttributes(MyPawn);
 
 		if (AttributeComp == nullptr)
 		{

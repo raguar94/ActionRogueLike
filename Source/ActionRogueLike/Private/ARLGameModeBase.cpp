@@ -51,7 +51,7 @@ void AARLGameModeBase::KillAllAI()
 	{
 		AARLAICharacter* Bot = *It;
 
-		UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAtributes(Bot);
+		UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAttributes(Bot);
 		if (ensure(AttributeComp) && AttributeComp->IsAlive())
 		{
 			AttributeComp->Kill(this); // @fixme: Pass in player?, for kill credit
@@ -72,7 +72,7 @@ void AARLGameModeBase::SpawnBotTimerElapsed()
 	{
 		AARLAICharacter* Bot = *It;
 
-		UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAtributes(Bot);
+		UARLAttributeComponent* AttributeComp = UARLAttributeComponent::GetAttributes(Bot);
 		if (ensure(AttributeComp) && AttributeComp->IsAlive())
 		{
 			NumberOfAliveBots++;

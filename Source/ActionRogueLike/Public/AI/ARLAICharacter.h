@@ -10,6 +10,7 @@ class UPawnSensingComponent;
 class UARLAttributeComponent;
 class UUserWidget;
 class UARLWorldUserWidget;
+class UARLActionComponent;
 
 UCLASS()
 class ACTIONROGUELIKE_API AARLAICharacter : public ACharacter
@@ -22,8 +23,13 @@ public:
 
 protected:
 
+	UARLWorldUserWidget* ActiveHealthBar;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UARLAttributeComponent* AttributeComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UARLActionComponent* ActionComp;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	UPawnSensingComponent* PawnSensingComponent;
@@ -34,9 +40,19 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> HealthBarWidgetClass;
 
-	UARLWorldUserWidget* ActiveHealthBar;
+	/* Widget to display when bot first sees a player. */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UARLWorldUserWidget> SpottedWidgetClass;
 
+	/* Key for AI Blackboard 'TargetActor' */
+	UPROPERTY(VisibleAnywhere, Category = "Effects")
+	FName TargetActorKey;
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
 	void SetTargetActor(AActor* NewTarget);
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	AActor* GetTargetActor() const;
 	
 	virtual void PostInitializeComponents() override;
 
