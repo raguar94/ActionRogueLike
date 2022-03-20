@@ -7,7 +7,7 @@
 #include "ARLWorldUserWidget.h"
 
 
-static TAutoConsoleVariable<bool> CVarDebugDrawInteraction(TEXT("su.InteractionDebugDraw"), false, TEXT("Ënable Debug Lines for Interact Component."), ECVF_Cheat);
+static TAutoConsoleVariable<bool> CVarDebugDrawInteraction(TEXT("su.InteractionDebugDraw"), false, TEXT("?nable Debug Lines for Interact Component."), ECVF_Cheat);
 
 // Sets default values for this component's properties
 UARLInteractionComponent::UARLInteractionComponent()
@@ -33,7 +33,12 @@ void UARLInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	FindBestInteractable();
+	APawn* MyPawn = Cast<APawn>(GetOwner());
+	if (MyPawn->IsLocallyControlled())
+	{
+		FindBestInteractable();
+	}
+	
 
 }
 
@@ -72,7 +77,7 @@ void UARLInteractionComponent::FindBestInteractable()
     {
         if (bDebugDraw)
         {
-        	DrawDebugSphere(GetWorld(), Hit.ImpactPoint, TraceRadius, 32, LineColor, false, 2.0f);
+        	DrawDebugSphere(GetWorld(), Hit.ImpactPoint, TraceRadius, 32, LineColor, false, 0.0f);
         }
 
         AActor* HitActor = Hit.GetActor();
@@ -113,19 +118,24 @@ void UARLInteractionComponent::FindBestInteractable()
 
     if (bDebugDraw)
     {
-        DrawDebugLine(GetWorld(), EyeLocation, EndPoint, LineColor, false, 2.0f, 0, 2.0f);
+        DrawDebugLine(GetWorld(), EyeLocation, EndPoint, LineColor, false, 2.0f, 0, 0.0f);
     }
 }
 
 
 void UARLInteractionComponent::PrimaryInteract()
 {
-	if (FocusedActor == nullptr)
+	ServerInteract(FocusedActor);
+}
+
+void UARLInteractionComponent::ServerInteract_Implementation(AActor* InFocus)
+{
+	if (InFocus == nullptr)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, "No Focus Actor to interact");
 		return;;
 	}
 	
 	APawn* MyPawn = Cast<APawn>(GetOwner());
-	IARLGameplayInterface::Execute_Interact(FocusedActor, MyPawn);
+	IARLGameplayInterface::Execute_Interact(InFocus, MyPawn);
 }

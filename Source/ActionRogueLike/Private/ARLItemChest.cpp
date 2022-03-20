@@ -2,11 +2,8 @@
 
 
 #include "ARLItemChest.h"
+#include "Net/UnrealNetwork.h"
 
-void AARLItemChest::Interact_Implementation(APawn* InstigatorPawn)
-{
-	LidMesh->SetRelativeRotation(FRotator(TargetPitch, 0.0f, 0.0f));
-}
 
 // Sets default values
 AARLItemChest::AARLItemChest()
@@ -21,5 +18,26 @@ AARLItemChest::AARLItemChest()
 	LidMesh->SetupAttachment(BaseMesh);
 
 	TargetPitch = 110.0f;
+
+	SetReplicates(true);
 }
 
+void AARLItemChest::Interact_Implementation(APawn* InstigatorPawn)
+{
+	bLidOpened = !bLidOpened;
+	// The RepNotifies only trigger automatically on the clients, for the server we have to call it
+	OnRep_LidOpened();
+}
+
+void AARLItemChest::OnRep_LidOpened()
+{
+	const float CurrPitch = bLidOpened ? TargetPitch : 0.0f;
+	LidMesh->SetRelativeRotation(FRotator(CurrPitch, 0.0f, 0.0f));
+}
+
+void AARLItemChest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AARLItemChest, bLidOpened);
+}

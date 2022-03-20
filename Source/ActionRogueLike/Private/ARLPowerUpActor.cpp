@@ -12,6 +12,8 @@ AARLPowerUpActor::AARLPowerUpActor()
 	RootComponent = SphereComp;
 
 	RespawnTime = 10.0f;
+
+	SetReplicates(true);
 }
 
 void AARLPowerUpActor::Interact_Implementation(APawn* InstigatorPawn)

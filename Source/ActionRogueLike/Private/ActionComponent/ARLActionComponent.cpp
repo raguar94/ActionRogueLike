@@ -8,6 +8,7 @@ UARLActionComponent::UARLActionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
+	SetIsReplicatedByDefault(true);
 }
 
 void UARLActionComponent::BeginPlay()
@@ -84,12 +85,23 @@ bool UARLActionComponent::StartActionByName(AActor* Instigator, FName ActionName
 				continue;
 			}
 
+			// Is Client?
+			if (!GetOwner()->HasAuthority())
+			{
+				ServerStartAction(Instigator, ActionName);
+			}
+
 			Action->StartAction(Instigator);
 			return true;
 		}
 	}
 
 	return false;
+}
+
+void UARLActionComponent::ServerStartAction_Implementation(AActor* Instigator, FName ActionName)
+{
+	StartActionByName(Instigator, ActionName);
 }
 
 bool UARLActionComponent::StopActionByName(AActor* Instigator, FName ActionName)
